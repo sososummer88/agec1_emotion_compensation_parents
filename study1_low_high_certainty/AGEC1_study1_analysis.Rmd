@@ -3,7 +3,7 @@ Parenting
 
 
 ```{r packages}
-library (ggplot2) ; library ('car'); library ('lme4');library ("mediation"); library ("foreign") ; library ("sciplot"); library ('lmerTest') ; library ("tidyr"); library ("plyr");library ("dplyr")
+library (ggplot2) ; library ('car'); library ('lme4');library ("mediation"); library ("foreign") ;  library ('lmerTest') ; library ("tidyr"); library ("plyr");library ("dplyr")
 ```
 
 
@@ -12,16 +12,15 @@ library (ggplot2) ; library ('car'); library ('lme4');library ("mediation"); lib
 
 setwd("C:/Users/Amit/Dropbox/Research/parenting/First project_establishing compensation/study1_low_high_certainty")
 
-d = read.csv("Parenting_sudy_8_trial_one_scenario_3.10.15.csv",skip =0,na.strings=c("NA","NaN", " "))
+d = read.csv("AGEC1_study1_data.csv",skip =0,na.strings=c("NA","NaN", " "))
 
 d$condition = factor(d$condition, label = c("low partner response", "high partner response", "Control"))
 
-d$par = factor(d$par , label = c("Low Intensity", "High Intensity"))
+d$par = factor(d$par , label = c("Low certainty", "High certainty"))
 
 
-d= subset (d, screen ==1)
-d1 = subset (d , scenario <=2) 
-d2 = subset (d, scenario >=3)
+d1 = subset (d , scenario <=2) ## create a subset for high certainty 
+d2 = subset (d, scenario >=3) ## create a subset for low certainty
 
 
 ```
@@ -58,9 +57,7 @@ sd= d %>%
   group_by(par) %>%
   summarise(
     sdfeel = sd(feel, na.rm = TRUE),
-    sdexpress = sd(express, na.rm = TRUE),
-    
-    sdregul = sd(exfeel, na.rm = TRUE)) 
+    sdexpress = sd(express, na.rm = TRUE)) 
 
 
 r = lm (express~ condition , d) ; summary (r)
@@ -69,21 +66,6 @@ r = lm (express~ condition , d) ; summary (r)
 ```
 
 
-```{r perliminary analysis}
-
-r = lm (express~ condition,  d) ; summary (r)
-confint (r, level = .95)
-
-
-r = lm (express~ age,  d) ; summary (r)
-confint (r, level = .95)
-
-
-```
-
-
-
-**d1**
 ```{r express}
 # conducting the interaction in order to examine things
 levels (d$condition)
@@ -95,12 +77,8 @@ d$rpar = as.integer (d$par)
 r = lm (express~ condition*par , d) ; summary (r)
 confint (r, level = .95)
 
-
-r = lm (express~ par, d) ; summary (r)
+r = lm (feel~ par , d) ; summary (r)
 confint (r, level = .95)
-
-r = lm (express~ condition, d) ; summary (r)
-confint (r, level = .95
 
 
 d$rpar <- relevel(d$par, "High Intensity")
@@ -111,21 +89,6 @@ confint (r, level = .95)
 r = lm (express~ par , d) ; summary (r)
 confint (r, level = .95)
 
-
-table (d$par , d$condition)
-
-
-library ('dplyr')
-sd= d %>%
-  group_by(par) %>%
-  summarise(
-    express = sd(express, na.rm = TRUE)) 
-sd
-
-
-#high intensity parenting scenarios 
-r = lm (express~ condition , d1) ; summary (r)
-confint (r, level = .95)
 
 ```
 
@@ -154,48 +117,26 @@ confint (r, level = .95)
 
 table (d$par , d$condition)
 
-#high intensity parenting scenarios 
-r = lm (feel~ condition , d1) ; summary (r)
-confint (r, level = .95)
-
-r = lm (feel~ condition , d2) ; summary (r)
-confint (r, level = .95)
-
-r = lm (exfeel~ condition , d1) ; summary (r)
-confint (r, level = .95)
-
 
 sd= d %>%
   group_by(par) %>%
   summarise(
     sdfeel = sd(feel, na.rm = TRUE),
-    sdexpress = sd(express, na.rm = TRUE),  
-    sdregul = sd(exfeel, na.rm = TRUE)) 
-
+    sdexpress = sd(express, na.rm = TRUE))
 sd
-# low intensity parenting scenarios 
+
+
+# look at high certainty and low certainty individually
+
+
 r = lm (feel~ condition , d2) ; summary (r)
 confint (r, level = .95)
 
-r = lm (express~ condition , d2) ; summary (r)
-confint (r, level = .95)
-
-r = lm (exfeel~ condition , d2) ; summary (r)
+r = lm (feel~ condition , d1) ; summary (r)
 confint (r, level = .95)
 
 
-sd= d2 %>%
-  group_by(condition) %>%
-  summarise(
-    sdfeel = sd(feel, na.rm = TRUE),
-    sdexpress = sd(express, na.rm = TRUE),  
-    sdregul = sd(exfeel, na.rm = TRUE)) 
 
-####per scenarios 
-library (dplyr)
-d %>%
-  group_by( scenario) %>% 
-  do(r = print(summary(lm(express ~ condition, data = .))))
 
 ```
 
@@ -207,7 +148,7 @@ library (dplyr)
 which( colnames(d)=="condition" )
 
 
-d1 = d[,c(20,22:24)] # clean the data frame to make the transformation easier. Later we would have to add the moderators into the first stage 
+d1 = d[,c(4,6:8)] # clean the data frame to make the transformation easier. Later we would have to add the moderators into the first stage 
 head(d1)
 
 d2 <- d1 %>%
@@ -219,7 +160,7 @@ d3 = subset (d2, variable == "express")
 head(d3)
 # summarySE provides the standard deviation, standard error of the mean, and a (default 95%) confidence interval
 
-library (bear)
+library (Rmisc)
 dfc <- summarySE(d2, measurevar="value", groupvars=c("condition","variable", "par"))
 dfc$variable = factor (dfc$variable, label = c("Experience", "Express"))
 dfc$par = factor (dfc$par, label = c("Low Certainty", "High Certainty"))
@@ -336,57 +277,6 @@ ggplot(dfc, aes(x=variable, y=value, fill=condition)) +
                   width=.1,position=position_dodge(.9))
 
 
-
-
-```
-
-
-
-```{r moderating restuls for compansation}
-
-
-str(d$par)
-
-d1 = subset (d, par == "Low Intensity")
-d1=subset (d1, condition != "Control")
-
-
-d1$child_amount = as.integer(d1$child_amount)
-
-r = lm (express ~ condition*age , d1); summary (r)
-
-
-
-```
-
-
-
-
-
-
-```{r expression regulation }
-
-
-dfc <- summarySE(d, measurevar="exfeel", groupvars=c("condition","par"))
-
-
-pd <- position_dodge(.1)
-
-cbPalette <- c("#CCCCCC", "#666666", "#333333")
-
-
-ggplot(dfc, aes(x=condition, y=exfeel, fill=condition)) + 
-    geom_bar(position=position_dodge(), stat="identity", colour="black" ) +
-    labs(title="Parenting Scenarios")+
-    
-    guides(fill=guide_legend(title=NULL))+
-    facet_wrap( ~ par, ncol=2)+
-    theme(axis.title.y = element_text(face="bold",  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_blank()) + 
-  coord_cartesian(ylim=c(1, 7)) +
-    ylab("Response")+
-    scale_fill_manual(values=cbPalette)+
-  geom_errorbar(aes(ymin=value-ci, ymax=value+ci),
-                  width=.1,position=position_dodge(.9))
 
 
 ```

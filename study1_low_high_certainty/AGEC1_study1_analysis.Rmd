@@ -1,0 +1,393 @@
+Parenting
+========================================================
+
+
+```{r packages}
+library (ggplot2) ; library ('car'); library ('lme4');library ("mediation"); library ("foreign") ; library ("sciplot"); library ('lmerTest') ; library ("tidyr"); library ("plyr");library ("dplyr")
+```
+
+
+**read the file **
+```{r readfile}
+
+setwd("C:/Users/Amit/Dropbox/Research/parenting/First project_establishing compensation/study1_low_high_certainty")
+
+d = read.csv("Parenting_sudy_8_trial_one_scenario_3.10.15.csv",skip =0,na.strings=c("NA","NaN", " "))
+
+d$condition = factor(d$condition, label = c("low partner response", "high partner response", "Control"))
+
+d$par = factor(d$par , label = c("Low Intensity", "High Intensity"))
+
+
+d= subset (d, screen ==1)
+d1 = subset (d , scenario <=2) 
+d2 = subset (d, scenario >=3)
+
+
+```
+
+
+```{r perliminary analysis}
+r = lm (express~ age , d) ; summary (r)
+confint (r, level = .95)
+
+
+r = lm (express~ sex , d) ; summary (r)
+confint (r, level = .95)
+
+head(d$white)
+
+a= length (d$white)
+
+ethnic =c(black = sum(d$black)/a, latino = sum(d$latino)/a,white= sum(d$white)/a,asian = sum(d$asian)/a, other= sum(d$other_ethnic)/a)
+
+ethnic
+```
+
+
+#compare the two conditions
+```{r compare_conditions}
+
+r = lm (feel~ par , d) ; summary (r)
+confint (r, level = .95)
+
+r = lm (express~ par , d) ; summary (r)
+confint (r, level = .95)
+
+sd= d %>%
+  group_by(par) %>%
+  summarise(
+    sdfeel = sd(feel, na.rm = TRUE),
+    sdexpress = sd(express, na.rm = TRUE),
+    
+    sdregul = sd(exfeel, na.rm = TRUE)) 
+
+
+r = lm (express~ condition , d) ; summary (r)
+
+
+```
+
+
+```{r perliminary analysis}
+
+r = lm (express~ condition,  d) ; summary (r)
+confint (r, level = .95)
+
+
+r = lm (express~ age,  d) ; summary (r)
+confint (r, level = .95)
+
+
+```
+
+
+
+**d1**
+```{r express}
+# conducting the interaction in order to examine things
+levels (d$condition)
+levels (d$par)
+
+d$rpar = as.integer (d$par)
+
+
+r = lm (express~ condition*par , d) ; summary (r)
+confint (r, level = .95)
+
+
+r = lm (express~ par, d) ; summary (r)
+confint (r, level = .95)
+
+r = lm (express~ condition, d) ; summary (r)
+confint (r, level = .95
+
+
+d$rpar <- relevel(d$par, "High Intensity")
+
+r = lm (express~ par , d) ; summary (r)
+confint (r, level = .95)
+
+r = lm (express~ par , d) ; summary (r)
+confint (r, level = .95)
+
+
+table (d$par , d$condition)
+
+
+library ('dplyr')
+sd= d %>%
+  group_by(par) %>%
+  summarise(
+    express = sd(express, na.rm = TRUE)) 
+sd
+
+
+#high intensity parenting scenarios 
+r = lm (express~ condition , d1) ; summary (r)
+confint (r, level = .95)
+
+```
+
+
+```{r feel}
+# conducting the interaction in order to examine things
+levels (d$condition)
+levels (d$par)
+
+r = lm (feel~ condition*par , d) ; summary (r)
+confint (r, level = .95)
+
+
+r = lm (feel~ par , d) ; summary (r)
+confint (r, level = .95)
+
+
+d$rpar <- relevel(d$par, "Low Intensity")
+
+r = lm (feel~ condition*par , d) ; summary (r)
+confint (r, level = .95)
+
+
+r = lm (feel~ condition , d) ; summary (r)
+confint (r, level = .95)
+
+table (d$par , d$condition)
+
+#high intensity parenting scenarios 
+r = lm (feel~ condition , d1) ; summary (r)
+confint (r, level = .95)
+
+r = lm (feel~ condition , d2) ; summary (r)
+confint (r, level = .95)
+
+r = lm (exfeel~ condition , d1) ; summary (r)
+confint (r, level = .95)
+
+
+sd= d %>%
+  group_by(par) %>%
+  summarise(
+    sdfeel = sd(feel, na.rm = TRUE),
+    sdexpress = sd(express, na.rm = TRUE),  
+    sdregul = sd(exfeel, na.rm = TRUE)) 
+
+sd
+# low intensity parenting scenarios 
+r = lm (feel~ condition , d2) ; summary (r)
+confint (r, level = .95)
+
+r = lm (express~ condition , d2) ; summary (r)
+confint (r, level = .95)
+
+r = lm (exfeel~ condition , d2) ; summary (r)
+confint (r, level = .95)
+
+
+sd= d2 %>%
+  group_by(condition) %>%
+  summarise(
+    sdfeel = sd(feel, na.rm = TRUE),
+    sdexpress = sd(express, na.rm = TRUE),  
+    sdregul = sd(exfeel, na.rm = TRUE)) 
+
+####per scenarios 
+library (dplyr)
+d %>%
+  group_by( scenario) %>% 
+  do(r = print(summary(lm(express ~ condition, data = .))))
+
+```
+
+
+
+box plot
+```{r boxplot}
+library (dplyr)
+which( colnames(d)=="condition" )
+
+
+d1 = d[,c(20,22:24)] # clean the data frame to make the transformation easier. Later we would have to add the moderators into the first stage 
+head(d1)
+
+d2 <- d1 %>%
+  gather(variable, value, -condition, -par) # transform the file into a long long format with just id  order and screen staying the same. 
+
+head (d2)
+# this is an addition to get only emotional expression 
+d3 = subset (d2, variable == "express")
+head(d3)
+# summarySE provides the standard deviation, standard error of the mean, and a (default 95%) confidence interval
+
+library (bear)
+dfc <- summarySE(d2, measurevar="value", groupvars=c("condition","variable", "par"))
+dfc$variable = factor (dfc$variable, label = c("Experience", "Express"))
+dfc$par = factor (dfc$par, label = c("Low Certainty", "High Certainty"))
+
+head(dfc)
+
+
+
+levels (dfc$condition)
+
+
+dfc$cont_condition <- ordered(dfc$condition, levels = c("high partner response", "control", "low partner response"))
+
+head(dfc)
+
+levels (dfc$cont_condition)
+
+pd <- position_dodge(.1)
+
+cbPalette <- c("#CCCCCC", "#666666", "#333333")
+
+
+ggplot(dfc, aes(x=variable, y=value, fill=condition)) + 
+    geom_bar(position=position_dodge(), stat="identity", colour="black" ) +
+    labs(title="Parenting Scenarios")+
+    
+    guides(fill=guide_legend(title=NULL))+
+    facet_wrap( ~ par, ncol=2)+
+    theme(axis.title.y = element_text(face="bold",  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_blank()) + 
+  coord_cartesian(ylim=c(1, 7)) +
+    ylab("Response")+
+    scale_fill_manual(values=cbPalette)+
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci),
+                  width=.1,position=position_dodge(.9))
+
+
+## the graph with only express
+
+str(d$express)
+
+
+dfc <- summarySE(d, measurevar="express", groupvars=c("condition", "par"))
+
+
+head(dfc)
+
+dfc$variable = factor (dfc$variable, label = c( "Express"))
+
+head (dfc)
+
+dfc$par = factor (dfc$par, label = c("Low Certainty", "High Certainty"))
+#dfc$condition = factor(dfc$condition , label = c("Low partner anger", "High partner anger", "control"))
+
+# James wanted the control to be in the middle
+dfc$condition <- ordered(dfc$condition, levels = c("low partner response", "Control", "high partner response"))
+
+
+head (dfc)
+
+dfc$condition = factor (dfc$condition, label =c("Low anger" , "Control" ,"High anger"))
+head (dfc)
+
+#dfc$condition = factor (dfc$condition, label = c("Low Anger" , "Control", "High Anger"))
+
+dfc$par = factor (dfc$par, label = c("Low certainty" , "High certainty"))
+
+
+pd <- position_dodge(.1)
+
+cbPalette <- c("#CCCCCC", "#666666", "#333333")
+
+
+ggplot(dfc, aes(x=par, y=express, fill=condition)) + 
+  geom_bar(position=position_dodge(), stat="identity", colour="black" ) +
+  labs(title="Anger responses")+  
+  guides(fill=guide_legend(title=NULL))+
+ #   facet_wrap( ~ par, ncol=2)+
+  theme_bw()+
+  guides(fill = guide_legend(override.aes = list(colour = NULL)))+
+    theme(axis.title.y = element_text(size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y=element_text( vjust=0.5, size=14),axis.title.x = element_blank(), legend.title = element_blank()) + 
+  coord_cartesian(ylim=c(1, 7)) +
+  ylab("Anger responses")+
+  scale_fill_manual(values=cbPalette)+
+  geom_errorbar(aes(ymin=express-ci, ymax=express+ci),
+width=.1,position=position_dodge(.9))
+
+head (dfc)
+
+head(d2)
+
+
+# high or low seperately  intensity scenarios 
+dhigh = subset (d2, par == "High Intensity" )
+dlow = subset (d2, par == "Low Intensity" )
+
+dfc <- summarySE(dlow, measurevar="value", groupvars=c("condition","variable"))
+
+
+pd <- position_dodge(.1)
+
+cbPalette <- c("#CCCCCC", "#666666", "#333333")
+
+
+ggplot(dfc, aes(x=variable, y=value, fill=condition)) + 
+    geom_bar(position=position_dodge(), stat="identity", colour="black" ) +
+    labs(title="High Intensity Scenarios")+
+    guides(fill=guide_legend(title=NULL))+
+  #  scale_fill_discrete(name="Experimental\nCondition"))+
+    theme(axis.title.y = element_text(face="bold",  size=20),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_blank()) + 
+  coord_cartesian(ylim=c(1, 7)) +
+    ylab("Response")+
+    scale_fill_manual(values=cbPalette)+
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci),
+                  width=.1,position=position_dodge(.9))
+
+
+
+
+```
+
+
+
+```{r moderating restuls for compansation}
+
+
+str(d$par)
+
+d1 = subset (d, par == "Low Intensity")
+d1=subset (d1, condition != "Control")
+
+
+d1$child_amount = as.integer(d1$child_amount)
+
+r = lm (express ~ condition*age , d1); summary (r)
+
+
+
+```
+
+
+
+
+
+
+```{r expression regulation }
+
+
+dfc <- summarySE(d, measurevar="exfeel", groupvars=c("condition","par"))
+
+
+pd <- position_dodge(.1)
+
+cbPalette <- c("#CCCCCC", "#666666", "#333333")
+
+
+ggplot(dfc, aes(x=condition, y=exfeel, fill=condition)) + 
+    geom_bar(position=position_dodge(), stat="identity", colour="black" ) +
+    labs(title="Parenting Scenarios")+
+    
+    guides(fill=guide_legend(title=NULL))+
+    facet_wrap( ~ par, ncol=2)+
+    theme(axis.title.y = element_text(face="bold",  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_blank()) + 
+  coord_cartesian(ylim=c(1, 7)) +
+    ylab("Response")+
+    scale_fill_manual(values=cbPalette)+
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci),
+                  width=.1,position=position_dodge(.9))
+
+
+```
+

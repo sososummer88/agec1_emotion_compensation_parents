@@ -1,0 +1,120 @@
+Parenting
+========================================================
+
+
+```{r packages}
+library (ggplot2) ;  library ('lme4');library ("mediation"); library ("foreign") ;  library ('lmerTest');  library ('plyr');library(dplyr); library (tidyr); library ('car') ; library (mediation)
+```
+
+
+**read the file **
+```{r readfile}
+
+setwd("C:/Users/Amit/Dropbox/Research/parenting/First project_establishing compensation/study2_united_front_correlation")
+
+d = read.csv("parenting_study_trial7.csv")
+
+
+d$condition = factor(d$condition, label = c("low anger", "high anger", "control"))
+
+
+```
+
+
+
+
+```{r perliminary analysis}
+
+r= lm (express~ age ,  d) ; summary (r)
+confint (r,  level = 0.95)
+
+r= lm (express~ sex , d) ; summary (r)
+confint (r,  level = 0.95)
+
+a= length (d$white)
+
+ethnic =c(black = sum(d$black)/a, latino = sum(d$latino)/a,white= sum(d$white)/a,asian = sum(d$asian)/a, other= sum(d$other_ethnic)/a)
+
+ethnic= round(ethnic,3)
+
+ethnic
+```
+
+
+```{r }
+
+r = lm(express ~ condition+age+sex , d) ; summary (r)
+confint (r,  level = 0.95)
+
+
+d %>%
+  group_by(condition) %>%
+  summarise(sd(express, na.rm = T))
+
+
+
+
+```
+
+
+```{r unit}
+
+detach("package:dplyr", unload=TRUE)
+library ('car')
+
+d$runit2 = recode(d$unit2,"7=1;6=2;5=3;4=4;3=5;2=6;1=7")   
+
+head(reliability (d[,c('unit1', 'runit2', 'unit3')], itema = TRUE, NA.Delete = TRUE))
+
+d$unitscale = (rowMeans(d[,c('unit1', 'runit2', 'unit3')], na.rm=T))
+
+
+mean(d$unitscale)
+
+hist(d$unitscale)
+```
+
+
+```{r unity interaction}
+
+
+d1 = subset (d, condition == "low anger" | condition == "high anger")
+d1$condition = as.numeric (d1$condition)
+d1$express = as.numeric (d1$express)
+d1$anger_to_partner = as.numeric (d1$anger_to_partner)
+
+
+#define the scales 
+
+
+r1 = lm(express ~ scale(condition)*scale(unit) , d1) ; summary (r1)
+confint (r1, level = .95)
+
+
+
+r1 = lm(express ~ scale(condition)*scale(unitscale) , d1) ; summary (r1)
+confint (r1, level = .95)
+
+r1 = lm(express ~ condition*unitscale , d1) ; summary (r1)
+
+
+
+r1 = lm(express ~ condition , d1) ; summary (r1)
+
+
+
+g = (ggplot(d1,aes(x=unitscale, y=express ,fill =condition, ymax =max(express)))
+  #+geom_point(shape=1, position=position_jitter(width=.2,height=.2), na.rm =T)
+   +stat_smooth(aes(linetype=condition, colour =condition), size =1.2, method='lm',fill = "grey", se = T, na.rm =T, ) 
+ +scale_colour_manual(values = c("#000000", "#000000")) 
+  +scale_y_continuous(limits = c(1, 7))
+ +scale_x_continuous(limits = c(2, 7))
+ +scale_linetype_manual(values=c("solid", "dotted")) 
+  +theme_bw()
+ +theme(legend.title=element_blank(),axis.title.y = element_text(  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_text(vjust=0.5, size=14)) 
+  +labs(title = "Anger responses", x = "Valuing parental unity", y = "Anger responses"))
+g;
+
+
+```
+

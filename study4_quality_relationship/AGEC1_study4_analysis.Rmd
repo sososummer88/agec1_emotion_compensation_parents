@@ -1,0 +1,202 @@
+iParenting
+========================================================
+
+
+```{r packages}
+library (ggplot2) ;  library ('lme4');library ("mediation"); library ("foreign") ;  library ('lmerTest'); library ('Rmisc')  ; library ('plyr'); library (tidyr); library ("car")
+```
+
+
+**read the file **
+```{r readfile}
+# at this stage you need to set the working directory to the folder in which the csv is located. 
+
+
+d = read.csv("AGEC1_study4_data.csv")
+d= subset (d, screen==1)
+
+# order is the first scenario they saw 
+a=table(d$id)
+length(a)
+
+head(a)
+# we got 146 participants per condition
+
+# the conditions are 1 - low 2 - high and 3 control. We are giving these nubmers names
+d$condition = factor(d$condition, label = c("low anger", "high anger", "control"))
+
+# we are subseting the deta 
+
+```
+
+This code just examined various demographic factors. 
+
+```{r freq}
+
+#start time
+age = d %>%
+  group_by(condition) %>%
+  summarise(
+     age_m = mean (age, na.rm = T),
+    age_sd = sd(age, na.rm = T)
+    )
+age
+
+sd (d$age) # we are printing age 
+#add age to the long format
+
+str(d$marital)
+table(s$marital)
+
+addmargins(table(d$gender, d$condition))
+
+sd (d$childAve)
+
+
+r = lm (express1 ~ express, d); summary (r)
+
+cor.test(d$express,d$express1)
+
+```
+
+
+#unity
+```{r scales}
+
+library (car)
+d$runit2 = recode(d$unit2,"6=1;5=2;4=3;3=4;2=5;1=6")   
+
+
+d$unitscale = (rowMeans(d[,c( 'unit1', 'runit2', 'unit3')], na.rm=T))
+
+
+d$rqual4 = recode(d$qual4,"5=1;4=2;3=3;2=4;1=5")   
+d$rqual7 = recode(d$qual7,"5=1;4=2;3=3;2=4;1=5")   
+
+#check the reliability 
+head(reliability (d[,c('qual1', 'qual2', 'qual3', 'rqual4', 'qual5', 'qual6', 'rqual7')], itema = TRUE, NA.Delete = TRUE))
+
+
+# creating the scale 
+d$qualscale = (rowMeans(d[,c( 'qual1', 'qual2', 'qual3', 'rqual4', 'qual5', 'qual6', 'rqual7')], na.rm=T))
+
+
+```
+
+
+```{r perliminary analysis}
+
+a= length (d$white)
+
+ethnic =c(black = sum(d$black)/a, latino = sum(d$latino)/a,white= sum(d$white)/a,asian = sum(d$asian)/a, other= sum(d$other_ethnic)/a)
+
+ethnic= round(ethnic,3)
+
+ethnic
+
+```
+
+
+main effect
+```{r main effect}
+#the comment scale standartize the results
+r= lm( mexpress ~ condition, d) ; summary (r)
+confint (r, level = .95)
+
+express = d %>%
+  group_by(condition) %>%
+  summarise(
+    age_sd = sd(mexpress, na.rm = T)
+    )
+
+express
+
+table (d$condition)
+str(d$qualscale)
+
+d$qualscaleexp = exp(d$qualscale)
+
+r= lm( qualscaleexp ~ condition*mexpress ,d) ; summary (r)
+
+
+## make sure that it is not only the married participants. 
+d1 =subset (d, marital ==2)
+r= lm( qualscaleexp ~ condition*mexpress ,d1) ; summary (r)
+
+
+```
+
+
+
+
+
+```{r main effect quality }
+
+hist (d$qualscale)
+hist(exp(d$qualscale))
+
+r= lm( scale(exp(qualscale)) ~ condition*mexpress*scale(unitscale), d) ; summary (r)
+confint (r, level = .95)
+
+d$condition <- relevel(d$condition, "low anger")
+
+
+str(d$condition)
+
+d1 = subset ( d, condition == "low anger" | condition == "high anger")
+
+levels(d1$condition)
+d1$condition = factor (d1$condition, label = c("Low anger", "High anger"))
+
+g = (ggplot(d1,aes(x=mexpress, y=scale(exp(qualscale)) ,fill =condition))
+  #+geom_point(shape=1, position=position_jitter(width=.2,height=.2), na.rm =T)
+   +stat_smooth(aes(linetype=condition, colour =condition), size =1.2, method='lm',fullrange = T, fill = "grey", se = T, na.rm =T, ) 
+ +scale_colour_manual(values = c("#000000", "#000000")) 
+#  +scale_y_continuous(limits = c(-1, 2))
+ +scale_x_continuous(limits = c(1, 7))
+ +scale_linetype_manual(values=c("solid", "dotted")) 
+  +theme_bw()
++theme(legend.title=element_blank(),axis.title.y = element_text(  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_text(vjust=0.5, size=14))
+  +labs(title = "Condition X Anger responses", x = "Anger responses", y = "Quality of marriage"))
+g;
+
+
+
+# = order controls for the order ot presentation. 
+mean (d$qualscale)
+
+library (moments)
+hist (d$qualscale)
+skewness(d$qualscale)
+
+agostino.test(d$qualscale)
+
+
+agostino.test(exp(d$qualscale))
+
+
+
+r= lm( exp(qualscale) ~ condition*scale(mexpress), d) ; summary (r)
+
+
+levels(d$condition)
+
+
+d$condition = factor (d$condition , label = c("Low Anger", "High Anger", "Control"))
+
+g = (ggplot(d,aes(x=scale(exp(qualscale)), y=mexpress ,fill =condition, ymax =max(express)))
+  #+geom_point(shape=1, position=position_jitter(width=.2,height=.2), na.rm =T)
+   +stat_smooth(aes(linetype=condition, colour =condition), size =1.2, method='lm',fill = NA, se = F, na.rm =T, )
+  
+ +scale_colour_manual(values = c("#000000", "#000000", "#000000")) 
+  +scale_y_continuous(limits = c(2, 6))
+# +scale_x_continuous(limits = c(1, 7))
+# +scale_linetype_manual(values=c("solid", "dotted", "solid")) 
+ +theme(legend.title=element_blank(),axis.title.y = element_text(  size=14),axis.text.x  = element_text( vjust=0.5, size=14),axis.text.y  = element_text( vjust=0.5, size=12),axis.title.x = element_text(vjust=0.5, size=14)) 
+  +labs(title = "Anger Responses", x = "quality of marriage (z scores)", y = ""))
+g;
+
+
+
+
+```

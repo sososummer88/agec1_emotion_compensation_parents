@@ -10,7 +10,6 @@ library (ggplot2) ; library ('car'); library ('lme4');library ("mediation"); lib
 **read the file **
 ```{r readfile}
 
-setwd("C:/Users/Amit/Dropbox/Research/parenting/First project_establishing compensation/study1_low_high_certainty")
 
 d = read.csv("AGEC1_study1_data.csv",skip =0,na.strings=c("NA","NaN", " "))
 

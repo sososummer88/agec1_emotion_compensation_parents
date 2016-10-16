@@ -10,9 +10,8 @@ library (ggplot2) ;  library ('lme4');library ("mediation"); library ("foreign")
 **read the file **
 ```{r readfile}
 
-setwd("C:/Users/Amit/Dropbox/Research/parenting/First project_establishing compensation/study2_united_front_correlation")
 
-d = read.csv("parenting_study_trial7.csv")
+d = read.csv("AGEC1_study2_data.csv")
 
 
 d$condition = factor(d$condition, label = c("low anger", "high anger", "control"))
